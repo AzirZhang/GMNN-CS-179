@@ -1,13 +1,10 @@
-import math
-import numpy as np
-import torch
 from torch import nn
-from torch.nn import init
-from torch.autograd import Variable
 import torch.nn.functional as F
 from layer import GraphConvolution
 
+
 class GNNq(nn.Module):
+
     def __init__(self, opt, adj):
         super(GNNq, self).__init__()
         self.opt = opt
@@ -34,7 +31,9 @@ class GNNq(nn.Module):
         x = self.m2(x)
         return x
 
+
 class GNNp(nn.Module):
+
     def __init__(self, opt, adj):
         super(GNNp, self).__init__()
         self.opt = opt

@@ -1,11 +1,8 @@
 import math
-import numpy as np
 import torch
 from torch import nn
-from torch.nn import init
-from torch.autograd import Variable
-import torch.nn.functional as F
 from torch.nn.parameter import Parameter
+
 
 class GraphConvolution(nn.Module):
 

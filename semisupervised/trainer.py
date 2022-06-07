@@ -14,6 +14,7 @@ def get_optimizer(name, parameters, lr, weight_decay=0):
         return torch.optim.RMSprop(parameters, lr=lr, weight_decay=weight_decay)
     elif name == 'adagrad':
         return torch.optim.Adagrad(parameters, lr=lr, weight_decay=weight_decay)
+        return torch.optim.Adagrad(parameters, lr=lr, weight_decay=weight_decay)
     elif name == 'adam':
         return torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
     elif name == 'adamax':
@@ -105,10 +106,10 @@ class Trainer(object):
                 'model': self.model.state_dict(),
                 'optim': self.optimizer.state_dict()
                 }
-        try:
-            torch.save(params, filename)
-        except BaseException:
-            print("[Warning: Saving failed... continuing anyway.]")
+        # try:
+        torch.save(params, filename)
+        # except BaseException:
+        #     print("[Warning: Saving failed... continuing anyway.]")
 
     def load(self, filename):
         try:

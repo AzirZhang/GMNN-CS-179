@@ -1,9 +1,5 @@
-import sys
-import os
 import math
-import numpy as np
 import torch
-from torch.autograd import Variable
 
 class Vocab(object):
 
