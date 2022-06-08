@@ -8,11 +8,13 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='citeseer')
 parser.add_argument('--num_exp', type=int, default=10)
+parser.add_argument('--cpu', type=int, default=False)
 args = parser.parse_args()
 
 with open(f'configs_{args.dataset}.yaml', 'r') as file:
     opt = yaml.safe_load(file)
 
+opt['cpu'] = args.cpu
 opt['data'] = opt['data'] + f'{args.dataset}'
 opt['decay'] = float(opt['decay'])
 
