@@ -13,8 +13,8 @@ class GNNq(nn.Module):
         opt_ = dict([('in', opt['num_feature']), ('out', opt['hidden_dim'])])
         self.m1 = GraphConvolution(opt_, adj)
 
-        # opt_ = dict([('in', opt['hidden_dim']), ('out', opt['hidden_dim'])])
-        # self.m3 = GraphConvolution(opt_, adj)
+        opt_ = dict([('in', opt['hidden_dim']), ('out', opt['hidden_dim'])])
+        self.m3 = GraphConvolution(opt_, adj)
 
         # opt_ = dict([('in', 2*opt['hidden_dim']), ('out', opt['hidden_dim'])])
         # self.m4 = GraphConvolution(opt_, adj)
@@ -28,16 +28,16 @@ class GNNq(nn.Module):
     def reset(self):
         self.m1.reset_parameters()
         self.m2.reset_parameters()
-        # self.m3.reset_parameters()
+        self.m3.reset_parameters()
         # self.m4.reset_parameters()
 
     def forward(self, x):
         x = F.dropout(x, self.opt['input_dropout'], training=self.training)
         x = self.m1(x)
         x = F.relu(x)
-        # x = F.dropout(x, self.opt['dropout'], training=self.training)
-        # x = self.m3(x)
-        # x = F.relu(x)
+        x = F.dropout(x, self.opt['dropout'], training=self.training)
+        x = self.m3(x)
+        x = F.relu(x)
         # x = F.dropout(x, self.opt['dropout'], training=self.training)
         # x = self.m4(x)
         # x = F.relu(x)
@@ -56,8 +56,8 @@ class GNNp(nn.Module):
         opt_ = dict([('in', opt['num_class']), ('out', opt['hidden_dim'])])
         self.m1 = GraphConvolution(opt_, adj)
 
-        # opt_ = dict([('in', opt['hidden_dim']), ('out', opt['hidden_dim'])])
-        # self.m3 = GraphConvolution(opt_, adj)
+        opt_ = dict([('in', opt['hidden_dim']), ('out', opt['hidden_dim'])])
+        self.m3 = GraphConvolution(opt_, adj)
 
         # opt_ = dict([('in', 2*opt['hidden_dim']), ('out', opt['hidden_dim'])])
         # self.m4 = GraphConvolution(opt_, adj)
@@ -71,16 +71,16 @@ class GNNp(nn.Module):
     def reset(self):
         self.m1.reset_parameters()
         self.m2.reset_parameters()
-        # self.m3.reset_parameters()
+        self.m3.reset_parameters()
         # self.m4.reset_parameters()
 
     def forward(self, x):
         x = F.dropout(x, self.opt['input_dropout'], training=self.training)
         x = self.m1(x)
         x = F.relu(x)
-        # x = F.dropout(x, self.opt['dropout'], training=self.training)
-        # x = self.m3(x)
-        # x = F.relu(x)
+        x = F.dropout(x, self.opt['dropout'], training=self.training)
+        x = self.m3(x)
+        x = F.relu(x)
         # x = F.dropout(x, self.opt['dropout'], training=self.training)
         # x = self.m4(x)
         # x = F.relu(x)
