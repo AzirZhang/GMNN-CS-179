@@ -1,8 +1,16 @@
+import sys
+import os
 import copy
+from datetime import datetime
+import time
 import numpy as np
 import random
 import argparse
+from shutil import copyfile
 import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
 
 from trainer import Trainer
 from gnn import GNNq, GNNp
@@ -38,7 +46,7 @@ elif args.cuda:
     torch.cuda.manual_seed(args.seed)
 
 opt = vars(args)
-print(opt)
+
 net_file = opt['dataset'] + '/net.txt'
 label_file = opt['dataset'] + '/label.txt'
 feature_file = opt['dataset'] + '/feature.txt'

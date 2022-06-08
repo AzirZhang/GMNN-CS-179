@@ -1,0 +1,20 @@
+data: './data/'
+save: './data/'
+hidden_dim: 16
+input_dropout: 0.5
+dropout: 0
+optimizer: 'rmsprop'
+lr: 0.05
+decay: 5e-4
+self_link_weight: 1.0
+pre_epoch: 100
+epoch: 100
+iter: 1
+use_gold: 1
+tau: 0.1
+draw: 'smp'
+seed: 314159
+metric: ["accuracy", "precision", "recall", "f1", "auroc"]
+deterministic_metric: 0
+cuda: torch.cuda.is_available()
+cpu: False

@@ -1,11 +1,6 @@
-import math
-import numpy as np
 import torch
 from torch import nn
-from torch.nn import init
-from torch.autograd import Variable
-import torch.nn.functional as F
-from torch.optim import Optimizer
+
 
 def get_optimizer(name, parameters, lr, weight_decay=0):
     if name == 'sgd':
@@ -73,21 +68,18 @@ class Trainer(object):
         self.optimizer.step()
         return loss.item()
     
-    def evaluate(self, inputs, target, idx):
+    def evaluate(self, inputs, idx):
         if self.opt['cuda']:
             inputs = inputs.cuda()
-            target = target.cuda()
             idx = idx.cuda()
 
         self.model.eval()
 
         logits = self.model(inputs)
-        loss = self.criterion(logits[idx], target[idx])
+        # print(logits.shape)
         preds = torch.max(logits[idx], dim=1)[1]
-        correct = preds.eq(target[idx]).double()
-        accuracy = correct.sum() / idx.size(0)
 
-        return loss.item(), preds, accuracy.item()
+        return preds
 
     def predict(self, inputs, tau=1):
         if self.opt['cuda']:

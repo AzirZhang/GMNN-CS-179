@@ -14,5 +14,7 @@ use_gold: 1
 tau: 0.1
 draw: 'max'
 seed: 314159
+metric: ["accuracy", "precision", "recall", "f1", "auroc"]
+deterministic_metric: 0
 cuda: torch.cuda.is_available()
 cpu: False

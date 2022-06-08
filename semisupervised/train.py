@@ -6,21 +6,29 @@ import torch
 from trainer import Trainer
 from gnn import GNNq, GNNp
 import loader
+from metrics import accuracy, precision, recall, f1, auroc
 
 
 class Train:
     def __init__(self, opt):
 
         self.opt = opt
+        self.metric = opt['metric']
+        self.dmetric = opt['deterministic_metric']
+        self.mMap = {"accuracy": accuracy,
+                     "precision": precision,
+                     "recall": recall,
+                     "f1": f1,
+                     "auroc": auroc}
 
         torch.manual_seed(opt["seed"])
         np.random.seed(opt["seed"])
         random.seed(opt["seed"])
+        self.cuda = opt['cuda']
         if opt["cpu"]:
-            cuda = False
+            self.cuda = False
         elif opt["cuda"]:
             torch.cuda.manual_seed(opt["seed"])
-
 
         net_file = self.opt['data'] + '/net.txt'
         label_file = self.opt['data'] + '/label.txt'
@@ -42,7 +50,7 @@ class Train:
         feature = loader.EntityFeature(file_name=feature_file, entity=[vocab_node, 0], feature=[vocab_feature, 1])
         graph.to_symmetric(self.opt['self_link_weight'])
         feature.to_one_hot(binary=True)
-        self.adj = graph.get_sparse_adjacency(self.opt['cuda'])
+        self.adj = graph.get_sparse_adjacency(self.cuda)
 
         with open(train_file, 'r') as fi:
             idx_train = [vocab_node.stoi[line.strip()] for line in fi]
@@ -63,7 +71,7 @@ class Train:
         self.inputs_p = torch.zeros(self.opt['num_node'], self.opt['num_class'])
         self.target_p = torch.zeros(self.opt['num_node'], self.opt['num_class'])
 
-        if self.opt['cuda']:
+        if self.cuda:
             self.inputs = self.inputs.cuda()
             self.target = self.target.cuda()
             self.idx_train = self.idx_train.cuda()
@@ -88,13 +96,11 @@ class Train:
             p_results += self.train_p(self.opt['epoch'])
             q_results += self.train_q(self.opt['epoch'])
 
-        acc_test = self.get_accuracy(q_results)
+        # if self.opt['save'] != '/':
+        #     self.trainer_q.save(self.opt['save'] + '/gnnq.pt')
+        #     self.trainer_p.save(self.opt['save'] + '/gnnp.pt')
 
-        print('{:.3f}'.format(acc_test * 100))
-
-        if self.opt['save'] != '/':
-            self.trainer_q.save(self.opt['save'] + '/gnnq.pt')
-            self.trainer_p.save(self.opt['save'] + '/gnnp.pt')
+        return torch.vstack(p_results), torch.vstack(q_results)
 
     def init_q_data(self):
         self.inputs_q.copy_(self.inputs)
@@ -135,12 +141,15 @@ class Train:
         results = []
         for epoch in range(epoches):
             loss = self.trainer_q.update_soft(self.inputs_q, self.target_q, self.idx_train)
-            _, preds, accuracy_dev = self.trainer_q.evaluate(self.inputs_q, self.target, self.idx_dev)
-            _, preds, accuracy_test = self.trainer_q.evaluate(self.inputs_q, self.target, self.idx_test)
-            results += [(accuracy_dev, accuracy_test)]
-            if accuracy_dev > best:
-                best = accuracy_dev
-                state = dict([('model', copy.deepcopy(self.trainer_q.model.state_dict())), ('optim', copy.deepcopy(self.trainer_q.optimizer.state_dict()))])
+            preds_dev = self.trainer_q.predict(self.inputs_q)[self.idx_dev]  # , self.idx_dev)
+            preds_test = self.trainer_q.predict(self.inputs_q)[self.idx_test]  # , self.idx_test)
+            results += [(preds_dev, preds_test)]
+            # print(self.target_q[self.idx_dev].shape)
+            metric = self.get_metric(preds_dev, self.target[self.idx_dev])
+            if metric[self.dmetric] > best:
+                best = metric[self.dmetric]
+                state = dict([('model', copy.deepcopy(self.trainer_q.model.state_dict())),
+                              ('optim', copy.deepcopy(self.trainer_q.optimizer.state_dict()))])
         self.trainer_q.model.load_state_dict(state['model'])
         self.trainer_q.optimizer.load_state_dict(state['optim'])
         return results
@@ -150,9 +159,10 @@ class Train:
         results = []
         for epoch in range(epoches):
             loss = self.trainer_p.update_soft(self.inputs_p, self.target_p, self.idx_all)
-            _, preds, accuracy_dev = self.trainer_p.evaluate(self.inputs_p, self.target, self.idx_dev)
-            _, preds, accuracy_test = self.trainer_p.evaluate(self.inputs_p, self.target, self.idx_test)
-            results += [(accuracy_dev, accuracy_test)]
+            preds_dev = self.trainer_p.predict(self.inputs_p)[self.idx_dev]  # , self.idx_dev)
+            preds_test = self.trainer_p.predict(self.inputs_p)[self.idx_test]  # , self.idx_test)
+            results += [torch.vstack([self.get_metric(preds_dev, self.target[self.idx_dev]),
+                                      self.get_metric(preds_test, self.target[self.idx_test])]).cpu()]
         return results
 
     def train_q(self, epoches):
@@ -160,14 +170,17 @@ class Train:
         results = []
         for epoch in range(epoches):
             loss = self.trainer_q.update_soft(self.inputs_q, self.target_q, self.idx_all)
-            _, preds, accuracy_dev = self.trainer_q.evaluate(self.inputs_q, self.target, self.idx_dev)
-            _, preds, accuracy_test = self.trainer_q.evaluate(self.inputs_q, self.target, self.idx_test)
-            results += [(accuracy_dev, accuracy_test)]
+            preds_dev = self.trainer_q.predict(self.inputs_q)[self.idx_dev]  # , self.idx_dev)
+            preds_test = self.trainer_q.predict(self.inputs_q)[self.idx_test]  # , self.idx_test)
+            results += [torch.vstack([self.get_metric(preds_dev, self.target[self.idx_dev]),
+                                      self.get_metric(preds_test, self.target[self.idx_test])]).cpu().reshape(1, 2, len(self.metric))]
         return results
 
-    def get_accuracy(self, results):
-        best_dev, acc_test = 0.0, 0.0
-        for d, t in results:
-            if d > best_dev:
-                best_dev, acc_test = d, t
-        return acc_test
+    def get_metric(self, pred, label):
+        # print(results)
+        result = []
+        for m in self.metric:
+            metric = self.mMap[m]
+            result.append(metric(label, pred).reshape(1).cpu())
+        result = torch.cat(result)
+        return result
